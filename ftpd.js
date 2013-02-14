@@ -415,7 +415,7 @@ function createServer(host, sandbox, pasvstartport, numports) {
                         if (socket.readable) socket.resume(); // just in case
                     });
                     var pasvport = pasvPorts.shift();
-                    logIf(3, "PASV port " + port, socket);
+                    logIf(3, "PASV port " + pasvport, socket);
                     pasv.listen(pasvport);
                     socket.dataListener = pasv;
                     logIf(3, "Passive data connection beginning to listen", socket);
