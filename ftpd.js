@@ -346,10 +346,7 @@ function createServer(host, sandbox, pasvstartport, numports) {
                     // Enter passive mode. This creates the listening socket.
                     if (!authenticated()) break;
                     // not sure whether the spec limits to 1 data connection at a time ...
-                    if (socket.dataListener) {
-                        pasvPorts.push(socket.dataPort);
-                        socket.dataListener.close(); 
-                    } // we're creating a new listener
+                    if (socket.dataListener) socket.dataListener.close(); // we're creating a new listener
                     if (socket.dataSocket) socket.dataSocket.end(); // close any existing connections
                     socket.dataListener = null;
                     socket.dataSocket = null;
