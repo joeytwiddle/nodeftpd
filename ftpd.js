@@ -18,7 +18,7 @@ TODO:
 
 
 // host should be an IP address, and sandbox a path without trailing slash for now
-function createServer(host, sandbox) {
+function createServer(host, sandbox, pasvstartport, numports) {
     // make sure host is an IP address, otherwise DATA connections will likely break
     var server = net.createServer();
     server.baseSandbox = sandbox; // path which we're starting relative to
@@ -32,6 +32,12 @@ function createServer(host, sandbox) {
                 console.log(message);
         }
     };
+
+    var pasvPorts = new Array();
+    for (var i=0; i<numports; i++) {
+        pasvPorts.push(pasvstartport+i);
+
+    }
 
     server.on("listening", function() {
         logIf(0, "nodeFTPd server up and ready for connections");
@@ -340,11 +346,22 @@ function createServer(host, sandbox) {
                     // Enter passive mode. This creates the listening socket.
                     if (!authenticated()) break;
                     // not sure whether the spec limits to 1 data connection at a time ...
-                    if (socket.dataListener) socket.dataListener.close(); // we're creating a new listener
+                    if (socket.dataListener) {
+                        pasvPorts.push(socket.dataListener.address().port);
+                        socket.dataListener.close(); 
+                    } // we're creating a new listener
                     if (socket.dataSocket) socket.dataSocket.end(); // close any existing connections
                     socket.dataListener = null;
                     socket.dataSocket = null;
                     socket.pause(); // Pause processing of further commands
+
+                    if (pasvPorts.length == 0) {
+                        logIf(0, "No more ports available.", socket);
+                        socket.resume();
+                        break;
+
+                    }
+
                     var pasv = net.createServer(function(psocket) {
                         logIf(1, "Incoming passive data connection", socket);
                         psocket.pause(); // Pause until data listeners are in place
@@ -397,9 +414,10 @@ function createServer(host, sandbox) {
                     });
                     pasv.on("close", function() {
                         logIf(3, "Passive data listener closed", socket);
+                        pasvPorts.push(socket.dataListener.address().port);
                         if (socket.readable) socket.resume(); // just in case
                     });
-                    pasv.listen(0);
+                    pasv.listen(pasvPorts.shift());
                     socket.dataListener = pasv;
                     logIf(3, "Passive data connection beginning to listen", socket);
                     break;
