@@ -677,7 +677,6 @@ function createServer(host, sandbox, pasvstartport, numports) {
 
         socket.addListener("end", function () {
 	    if (socket.dataListener) {
-                pasvPorts.push(socket.dataPort);
                 socket.dataListener.close(); 
             } // we're creating a new listener
             if (socket.dataSocket) socket.dataSocket.end(); // close any existing connections
