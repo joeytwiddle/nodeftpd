@@ -347,7 +347,7 @@ function createServer(host, sandbox, pasvstartport, numports) {
                     if (!authenticated()) break;
                     // not sure whether the spec limits to 1 data connection at a time ...
                     if (socket.dataListener) {
-                        pasvPorts.push(socket.dataListener.address().port);
+                        pasvPorts.push(socket.dataPort);
                         socket.dataListener.close(); 
                     } // we're creating a new listener
                     if (socket.dataSocket) socket.dataSocket.end(); // close any existing connections
@@ -414,7 +414,7 @@ function createServer(host, sandbox, pasvstartport, numports) {
                     });
                     pasv.on("close", function() {
                         logIf(3, "Passive data listener closed", socket);
-                        pasvPorts.push(socket.dataListener.address().port);
+                        pasvPorts.push(socket.dataPort);
                         if (socket.readable) socket.resume(); // just in case
                     });
                     pasv.listen(pasvPorts.shift());
@@ -676,6 +676,13 @@ function createServer(host, sandbox, pasvstartport, numports) {
         });
 
         socket.addListener("end", function () {
+	    if (socket.dataListener) {
+                pasvPorts.push(socket.dataPort);
+                socket.dataListener.close(); 
+            } // we're creating a new listener
+            if (socket.dataSocket) socket.dataSocket.end(); // close any existing connections
+            socket.dataListener = null;
+            socket.dataSocket = null;
             logIf(1, "Client connection ended", socket);
         });
         socket.addListener("error", function (err) {
